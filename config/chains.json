@@ -1,0 +1,64 @@
+{
+  "chains": [
+    {
+      "id": 1,
+      "key": "eth",
+      "name": "Ethereum",
+      "rpc": "https://eth.llamarpc.com",
+      "explorer": "https://etherscan.io",
+      "nativeToken": { "symbol": "ETH", "decimals": 18 },
+      "usdc": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "usdcDecimals": 6
+    },
+    {
+      "id": 10,
+      "key": "opt",
+      "name": "Optimism",
+      "rpc": "https://mainnet.optimism.io",
+      "explorer": "https://optimistic.etherscan.io",
+      "nativeToken": { "symbol": "ETH", "decimals": 18 },
+      "usdc": "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
+      "usdcDecimals": 6
+    },
+    {
+      "id": 137,
+      "key": "pol",
+      "name": "Polygon",
+      "rpc": "https://polygon.llamarpc.com",
+      "explorer": "https://polygonscan.com",
+      "nativeToken": { "symbol": "POL", "decimals": 18 },
+      "usdc": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+      "usdcDecimals": 6
+    },
+    {
+      "id": 42161,
+      "key": "arb",
+      "name": "Arbitrum",
+      "rpc": "https://arb1.arbitrum.io/rpc",
+      "explorer": "https://arbiscan.io",
+      "nativeToken": { "symbol": "ETH", "decimals": 18 },
+      "usdc": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "usdcDecimals": 6
+    },
+    {
+      "id": 8453,
+      "key": "bas",
+      "name": "Base",
+      "rpc": "https://mainnet.base.org",
+      "explorer": "https://basescan.org",
+      "nativeToken": { "symbol": "ETH", "decimals": 18 },
+      "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "usdcDecimals": 6
+    }
+  ],
+  "testnet": {
+    "id": 84532,
+    "key": "bsep",
+    "name": "Base Sepolia",
+    "rpc": "https://sepolia.base.org",
+    "explorer": "https://sepolia-explorer.base.org",
+    "nativeToken": { "symbol": "ETH", "decimals": 18 },
+    "usdc": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+    "usdcDecimals": 6
+  }
+}
