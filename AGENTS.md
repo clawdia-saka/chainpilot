@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus MCP
 
-This project is indexed by GitNexus as **chainpilot** (220 symbols, 472 relationships, 20 execution flows).
+This project is indexed by GitNexus as **chainpilot** (222 symbols, 472 relationships, 20 execution flows).
 
 ## Always Start Here
 

@@ -46,7 +46,7 @@ export interface ChainSignal {
   /** Best yield APY (percent) for this chain */
   yieldApy: number;
   /** Yield protocol providing the best APY */
-  yieldProtocol: 'ethena' | 'aave' | 'none';
+  yieldProtocol: 'sky' | 'ethena' | 'aave' | 'none';
   /** All yield options for this chain, ranked by APY descending */
   yieldOptions: YieldEntry[];
   /** true if score ≥ MIN_CONFIDENCE threshold */

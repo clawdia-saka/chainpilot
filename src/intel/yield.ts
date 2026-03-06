@@ -14,15 +14,46 @@ import { ethers } from 'ethers';
 import { TARGET_CHAINS, YIELD_TOKENS, YIELD_PROTOCOLS, USDC_ADDRESSES, RPC_URLS } from '../config.js';
 import type { TargetChainId } from '../config.js';
 
+// ─── Sky sUSDS APY (via DeFiLlama) ──────────────────────────────────────────
+
+const SKY_DEFILLAMA_POOL = 'd8c4eff5-c8a9-46fc-a888-057c4c668e72';
+
+/** Maximum plausible APY for Sky sUSDS (sanity cap). */
+const SKY_MAX_APY = 20;
+
+/**
+ * Fetch current Sky sUSDS APY from DeFiLlama yields API.
+ * Returns APY in percent (e.g., 4.0 for 4.0%).
+ * Falls back to on-chain SSR rate calculation if DeFiLlama fails.
+ */
+async function fetchSkyApy(): Promise<number> {
+  const res = await fetch(
+    `https://yields.llama.fi/chart/${SKY_DEFILLAMA_POOL}`,
+    { signal: AbortSignal.timeout(10_000) },
+  );
+  if (!res.ok) throw new Error(`DeFiLlama Sky pool responded ${res.status}`);
+  const data = (await res.json()) as { status: string; data: Array<{ apy: number }> };
+  if (data.status !== 'success' || !data.data?.length) {
+    throw new Error('DeFiLlama Sky: no data points');
+  }
+  // Latest data point
+  const latest = data.data[data.data.length - 1]!;
+  const raw = latest.apy;
+  if (typeof raw !== 'number' || !isFinite(raw) || raw < 0) {
+    throw new Error(`Sky: APY ${raw} is invalid`);
+  }
+  return Math.min(raw, SKY_MAX_APY);
+}
+
 // ─── Public types ─────────────────────────────────────────────────────────────
 
 export interface ChainYieldData {
   chainId: TargetChainId;
   /** Best yield protocol for this chain */
-  protocol: 'ethena' | 'aave';
+  protocol: 'sky' | 'ethena' | 'aave';
   /** APY in percent (e.g., 5.2 = 5.2%) */
   apy: number;
-  /** Deposit/receipt token address (sUSDe or aUSDC) */
+  /** Deposit/receipt token address (sUSDS, sUSDe, or aUSDC) */
   tokenAddress: string;
 }
 
@@ -134,17 +165,36 @@ async function fetchAaveApy(chainId: TargetChainId): Promise<number> {
 async function fetchChainYield(
   chainId: TargetChainId,
   ethenaApyResult: PromiseSettledResult<number>,
+  skyApyResult: PromiseSettledResult<number>,
 ): Promise<ChainYieldData> {
   const tokens = YIELD_TOKENS[chainId];
 
-  // ── Try Ethena (if available on this chain) ────────────────────────────────
+  // Collect candidates and pick highest APY
+  const candidates: Array<{ protocol: 'sky' | 'ethena' | 'aave'; apy: number; tokenAddress: string }> = [];
+
+  // ── Sky sUSDS (if available on this chain) ─────────────────────────────────
+  if (tokens.sky && skyApyResult.status === 'fulfilled') {
+    candidates.push({
+      protocol: 'sky',
+      apy: skyApyResult.value,
+      tokenAddress: tokens.sky.sUSDS,
+    });
+  }
+
+  // ── Ethena sUSDe (if available on this chain) ──────────────────────────────
   if (tokens.ethena && ethenaApyResult.status === 'fulfilled') {
-    return {
-      chainId,
+    candidates.push({
       protocol: 'ethena',
       apy: ethenaApyResult.value,
       tokenAddress: tokens.ethena.sUSDe,
-    };
+    });
+  }
+
+  // Return best candidate so far if we have any
+  if (candidates.length > 0) {
+    candidates.sort((a, b) => b.apy - a.apy);
+    const best = candidates[0]!;
+    return { chainId, ...best };
   }
 
   // ── Try Aave on-chain ──────────────────────────────────────────────────────
@@ -188,17 +238,19 @@ async function fetchChainYield(
  * Aave APY is fetched per chain in parallel.
  */
 export async function fetchAllYields(): Promise<ChainYieldData[]> {
-  // Fetch Ethena APY once — it applies to all chains
-  const ethenaResult = await Promise.allSettled([fetchEthenaApy()]);
-  const ethenaApyResult = ethenaResult[0]!;
+  // Fetch global APYs once — they apply to all chains where available
+  const [ethenaSettled, skySettled] = await Promise.allSettled([fetchEthenaApy(), fetchSkyApy()]);
 
-  if (ethenaApyResult.status === 'rejected') {
-    console.warn('[yield] Ethena APY fetch failed:', ethenaApyResult.reason);
+  if (ethenaSettled.status === 'rejected') {
+    console.warn('[yield] Ethena APY fetch failed:', ethenaSettled.reason);
+  }
+  if (skySettled.status === 'rejected') {
+    console.warn('[yield] Sky sUSDS APY fetch failed:', skySettled.reason);
   }
 
   const chainIds = Object.values(TARGET_CHAINS) as TargetChainId[];
   const results = await Promise.allSettled(
-    chainIds.map((chainId) => fetchChainYield(chainId, ethenaApyResult)),
+    chainIds.map((chainId) => fetchChainYield(chainId, ethenaSettled, skySettled)),
   );
 
   return results.map((res, i) => {
@@ -223,9 +275,13 @@ export async function fetchAllYields(): Promise<ChainYieldData[]> {
  */
 export function getBestYieldToken(chainId: TargetChainId): {
   address: string;
-  protocol: 'ethena' | 'aave';
+  protocol: 'sky' | 'ethena' | 'aave';
 } {
   const tokens = YIELD_TOKENS[chainId];
+  // Sky sUSDS is highest APY right now — prefer on Ethereum
+  if (tokens.sky) {
+    return { address: tokens.sky.sUSDS, protocol: 'sky' };
+  }
   if (tokens.ethena) {
     return { address: tokens.ethena.sUSDe, protocol: 'ethena' };
   }
@@ -239,7 +295,7 @@ export function getBestYieldToken(chainId: TargetChainId): {
 
 export interface YieldEntry {
   chainId: TargetChainId;
-  protocol: 'ethena' | 'aave';
+  protocol: 'sky' | 'ethena' | 'aave';
   apy: number;
   depositToken: string;
   vaultAddress: string;
@@ -252,13 +308,16 @@ export interface YieldEntry {
  * Export: getYields() => YieldEntry[]
  */
 export async function getYields(): Promise<YieldEntry[]> {
-  // Fetch Ethena APY once (chain-agnostic)
-  const ethenaApySettled = await Promise.allSettled([fetchEthenaApy()]);
-  const ethenaResult = ethenaApySettled[0]!;
-  if (ethenaResult.status === 'rejected') {
-    console.warn('[yield] Ethena APY fetch failed:', ethenaResult.reason);
+  // Fetch global APYs once (chain-agnostic)
+  const [ethenaSettled, skySettled] = await Promise.allSettled([fetchEthenaApy(), fetchSkyApy()]);
+  if (ethenaSettled.status === 'rejected') {
+    console.warn('[yield] Ethena APY fetch failed:', ethenaSettled.reason);
   }
-  const ethenaApy = ethenaResult.status === 'fulfilled' ? ethenaResult.value : 0;
+  if (skySettled.status === 'rejected') {
+    console.warn('[yield] Sky sUSDS APY fetch failed:', skySettled.reason);
+  }
+  const ethenaApy = ethenaSettled.status === 'fulfilled' ? ethenaSettled.value : 0;
+  const skyApy = skySettled.status === 'fulfilled' ? skySettled.value : 0;
 
   const chainIds = Object.values(TARGET_CHAINS) as TargetChainId[];
   const entries: YieldEntry[] = [];
@@ -266,6 +325,18 @@ export async function getYields(): Promise<YieldEntry[]> {
   await Promise.allSettled(
     chainIds.flatMap((chainId) => {
       const tasks: Promise<void>[] = [];
+
+      // Sky
+      const skyConfig = YIELD_PROTOCOLS['sky']?.[chainId];
+      if (skyConfig) {
+        entries.push({
+          chainId,
+          protocol: 'sky',
+          apy: skyApy,
+          depositToken: skyConfig.depositToken,
+          vaultAddress: skyConfig.vaultAddress,
+        });
+      }
 
       // Ethena
       const ethenaConfig = YIELD_PROTOCOLS['ethena']?.[chainId];

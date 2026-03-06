@@ -97,6 +97,7 @@ export const RPC_URLS: Record<TargetChainId, string> = {
 export interface YieldTokenConfig {
   ethena?: { sUSDe: string };
   aave?: { aUSDC: string; poolAddress: string };
+  sky?: { sUSDS: string; ssrAddress: string };
 }
 
 export const YIELD_TOKENS: Record<TargetChainId, YieldTokenConfig> = {
@@ -105,6 +106,10 @@ export const YIELD_TOKENS: Record<TargetChainId, YieldTokenConfig> = {
     aave: {
       aUSDC: '0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c',
       poolAddress: '0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2',
+    },
+    sky: {
+      sUSDS: '0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD',
+      ssrAddress: '0x0650CAF159C5A49f711e8169D4336ECB9b950275',
     },
   },
   [TARGET_CHAINS.OPTIMISM]: {
@@ -150,6 +155,13 @@ export interface YieldProtocolConfig {
 }
 
 export const YIELD_PROTOCOLS: { [protocol: string]: { [chainId: number]: YieldProtocolConfig } } = {
+  sky: {
+    [TARGET_CHAINS.ETHEREUM]: {
+      depositToken: '0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD', // sUSDS (18 dec)
+      vaultAddress: '0x0650CAF159C5A49f711e8169D4336ECB9b950275', // SSR contract
+      decimals: 18,
+    },
+  },
   ethena: {
     [TARGET_CHAINS.ETHEREUM]: {
       depositToken: '0x9D39A5DE30e57443BfF2A8307A4256c8797A3497', // sUSDe (18 dec)
