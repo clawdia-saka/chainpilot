@@ -36,7 +36,7 @@ export const CANCEL_FILE = `/tmp/chainpilot-cancel-evacuate-${_cancelNonce}`;
 
 const TVL_DROP_THRESHOLD = 0.10; // 10% drop triggers alert
 const DEPEG_THRESHOLD_USD = 980;  // <$980 out of $1000 in = >2% depeg
-const RPC_TIMEOUT_MS = 10_000;
+const RPC_TIMEOUT_MS = 15_000;
 
 // ─── Timeout helper ───────────────────────────────────────────────────────────
 

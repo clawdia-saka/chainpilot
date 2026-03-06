@@ -83,11 +83,11 @@ export const WALLET = {
 // Used for on-chain reads (e.g., Aave getReserveData). No API key required.
 
 export const RPC_URLS: Record<TargetChainId, string> = {
-  [TARGET_CHAINS.ETHEREUM]: 'https://eth.llamarpc.com',
-  [TARGET_CHAINS.OPTIMISM]: 'https://mainnet.optimism.io',
+  [TARGET_CHAINS.ETHEREUM]: 'https://ethereum-rpc.publicnode.com',
+  [TARGET_CHAINS.OPTIMISM]: 'https://optimism-rpc.publicnode.com',
   [TARGET_CHAINS.POLYGON]: 'https://polygon-bor-rpc.publicnode.com',
-  [TARGET_CHAINS.ARBITRUM]: 'https://arb1.arbitrum.io/rpc',
-  [TARGET_CHAINS.BASE]: 'https://mainnet.base.org',
+  [TARGET_CHAINS.ARBITRUM]: 'https://arbitrum-one-rpc.publicnode.com',
+  [TARGET_CHAINS.BASE]: 'https://base-rpc.publicnode.com',
 } as const;
 
 // ─── Yield token addresses per chain ──────────────────────────────────────────

@@ -100,7 +100,8 @@ export async function fetchChainTvl(): Promise<ChainTvlData[]> {
     const [chainIdStr, chainName] = chainEntries[i]!;
     const chainId = Number(chainIdStr) as TargetChainId;
     if (res.status === 'fulfilled') return res.value;
-    console.warn(`[defillama] TVL fetch failed for ${chainName}:`, res.reason);
+    const errMsg = res.reason instanceof Error ? res.reason.message : String(res.reason);
+    console.warn(`[defillama] TVL fetch failed for ${chainName}: ${errMsg}`);
     return { chainId, chainName, tvlUsd: 0, tvlChange24hPct: 0 };
   });
 }
@@ -130,7 +131,8 @@ export async function fetchDexVolume(): Promise<ChainDexData[]> {
     const [chainIdStr, chainName] = chainEntries[i]!;
     const chainId = Number(chainIdStr) as TargetChainId;
     if (res.status === 'fulfilled') return res.value;
-    console.warn(`[defillama] DEX volume fetch failed for ${chainName}:`, res.reason);
+    const errMsg = res.reason instanceof Error ? res.reason.message : String(res.reason);
+    console.warn(`[defillama] DEX volume fetch failed for ${chainName}: ${errMsg}`);
     return { chainId, chainName, dexVolume24hUsd: 0 };
   });
 }

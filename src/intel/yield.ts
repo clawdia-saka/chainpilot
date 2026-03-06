@@ -117,7 +117,7 @@ async function fetchAaveApy(chainId: TargetChainId): Promise<number> {
     currentLiquidityRate: bigint;
   }>)(usdcAddress);
   const timeout = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error(`Aave RPC timeout chain ${chainId}`)), 10_000),
+    setTimeout(() => reject(new Error(`Aave RPC timeout chain ${chainId}`)), 15_000),
   );
   const reserveData = await Promise.race([call, timeout]);
 
